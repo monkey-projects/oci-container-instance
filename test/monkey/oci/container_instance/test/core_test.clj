@@ -1,7 +1,8 @@
 (ns monkey.oci.container-instance.test.core-test
   (:require [clojure.test :refer [deftest testing is with-test]]
             [monkey.oci.container-instance.core :as sut]
-            [martian.test :as mt])
+            [martian.test :as mt]
+            [schema.core :as s])
   (:import java.security.KeyPairGenerator))
 
 (defn generate-key []
@@ -43,7 +44,36 @@
    (test-endpoints test-ctx ep)))
 
 (deftest container-instance-endpoints
-  (test-endpoints {:list-container-instances {:compartment-id "test-compartment"}}))
+  (test-endpoints {:list-container-instances {:compartment-id "test-compartment"}
+                   :create-container-instance {:container-instance
+                                               {:availability-domain "test-domain"
+                                                :compartment-id "test-compartment"
+                                                :shape "test-shape"
+                                                :shape-config {:ocpus 1}
+                                                :containers [{:image-url "test:latest"}]
+                                                :vnics [{:subnet-id "test-subnet"}]}}
+                   :start-container-instance {:instance-id "test-id"}
+                   :stop-container-instance {:instance-id "test-id"}
+                   :get-container-instance {:instance-id "test-id"}
+                   :delete-container-instance {:instance-id "test-id"}}))
 
 (deftest shape-endpoints
   (test-endpoints {:list-container-instance-shapes {:compartment-id "test-compartment"}}))
+
+(deftest image-pull-secrets
+  (testing "fails on invalid"
+    (is (some? (s/check sut/ImagePullSecrets
+                        {:secretType "invalid"}))))
+  
+  (testing "accepts basic"
+    (is (nil? (s/check sut/ImagePullSecrets
+                       {:secretType "BASIC"
+                        :registryEndpoint "test"
+                        :username "testuser"
+                        :password "testpass"}))))
+
+  (testing "accepts vault"
+    (is (nil? (s/check sut/ImagePullSecrets
+                       {:secretType "VAULT"
+                        :registryEndpoint "test"
+                        :secretId "test-secret"})))))
