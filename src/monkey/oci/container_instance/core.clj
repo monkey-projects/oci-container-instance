@@ -15,14 +15,14 @@
   (comp (partial >= n) count))
 
 (def health-check-base
-  {(s/optional-key :failureAction) (s/constrained s/Str #{"KILL" "NONE"})
-   (s/optional-key :failureThreshold) (s/constrained s/Int pos?)
-   :healthCheckType (s/constrained s/Str #{"HTTP" "TCP" "COMMAND"})
-   (s/optional-key :initialDelayInSeconds) s/Int
-   (s/optional-key :intervalInSeconds) (s/constrained s/Int pos?)
+  {(s/optional-key :failure-action) (s/constrained s/Str #{"KILL" "NONE"})
+   (s/optional-key :failure-threshold) (s/constrained s/Int pos?)
+   :health-check-type (s/constrained s/Str #{"HTTP" "TCP" "COMMAND"})
+   (s/optional-key :initial-delay-in-seconds) s/Int
+   (s/optional-key :interval-in-seconds) (s/constrained s/Int pos?)
    (s/optional-key :name) s/Str
-   (s/optional-key :successThreshold) (s/constrained s/Int pos?)
-   (s/optional-key :timeoutInSeconds) (s/constrained s/Int pos?)})
+   (s/optional-key :success-threshold) (s/constrained s/Int pos?)
+   (s/optional-key :timeout-in-seconds) (s/constrained s/Int pos?)})
 
 (s/defschema CommandHealthCheck
   (assoc health-check-base
@@ -43,36 +43,36 @@
          :port s/Int))
 
 (s/defschema HealthCheck
-  (s/conditional (prop-matches? :healthCheckType "COMMAND") CommandHealthCheck
-                 (prop-matches? :healthCheckType "HTTP") HttpHealthCheck
-                 (prop-matches? :healthCheckType "TCP") TcpHealthCheck))
+  (s/conditional (prop-matches? :health-check-type "COMMAND") CommandHealthCheck
+                 (prop-matches? :health-check-type "HTTP") HttpHealthCheck
+                 (prop-matches? :health-check-type "TCP") TcpHealthCheck))
 
 (s/defschema ResourceConfig
-  {(s/optional-key :memoryLimitInGBs) s/Int
-   (s/optional-key :vcpusLimit) s/Int})
+  {(s/optional-key :memory-limit-in-g-bs) s/Int
+   (s/optional-key :vcpus-limit) s/Int})
 
 (s/defschema SecurityContext
-  {(s/optional-key :securityContextType) (s/constrained s/Str #{"LINUX"})})
+  {(s/optional-key :security-context-type) (s/constrained s/Str #{"LINUX"})})
 
 (s/defschema VolumeMount
-  {:volumeName s/Str
-   :mountPath s/Str
-   (s/optional-key :isReadOnly) s/Bool
+  {:volume-name s/Str
+   :mount-path s/Str
+   (s/optional-key :is-read-only) s/Bool
    (s/optional-key :partition) (s/constrained s/Int pos?)
-   (s/optional-key :subPath) s/Str})
+   (s/optional-key :sub-path) s/Str})
 
 (s/defschema ContainerDetails
   {(s/optional-key :arguments) [s/Str]
    (s/optional-key :command) [s/Str]
-   (s/optional-key :displayName) s/Str
-   (s/optional-key :environmentVariables) {s/Str s/Str}
-   (s/optional-key :healthChecks) [HealthCheck]
-   :imageUrl s/Str
-   (s/optional-key :isResourcePrincipalDisabled) s/Bool
-   (s/optional-key :resourceConfig) ResourceConfig
-   (s/optional-key :securityContext) SecurityContext
-   (s/optional-key :volumeMounts) [VolumeMount]
-   (s/optional-key :workingDirectory) s/Str})
+   (s/optional-key :display-name) s/Str
+   (s/optional-key :environment-variables) {s/Str s/Str}
+   (s/optional-key :health-checks) [HealthCheck]
+   :image-url s/Str
+   (s/optional-key :is-resource-principal-disabled) s/Bool
+   (s/optional-key :resource-config) ResourceConfig
+   (s/optional-key :security-context) SecurityContext
+   (s/optional-key :volume-mounts) [VolumeMount]
+   (s/optional-key :working-directory) s/Str})
 
 (s/defschema DnsConfig
   {(s/optional-key :nameservers) (s/constrained [s/Str] (max-count? 3))
@@ -80,12 +80,12 @@
    (s/optional-key :searches) (s/constrained [s/Str] (max-count? 6))})
 
 (s/defschema ShapeConfig
-  {(s/optional-key :memoryInGBs) s/Int
+  {(s/optional-key :memory-in-g-bs) s/Int
    :ocpus s/Int})
 
 (def image-pull-secrets-base
-  {:secretType (s/constrained s/Str #{"BASIC" "VAULT"})
-   :registryEndpoint s/Str})
+  {:secret-type (s/constrained s/Str #{"BASIC" "VAULT"})
+   :registry-endpoint s/Str})
 
 (s/defschema BasicImagePullSecrets
   (assoc image-pull-secrets-base
@@ -94,32 +94,32 @@
 
 (s/defschema VaultImagePullSecrets
   (assoc image-pull-secrets-base
-         :secretId s/Str))
+         :secret-id s/Str))
 
 (s/defschema ImagePullSecrets
-  (s/conditional (prop-matches? :secretType "BASIC") BasicImagePullSecrets
-                 (prop-matches? :secretType "VAULT") VaultImagePullSecrets))
+  (s/conditional (prop-matches? :secret-type "BASIC") BasicImagePullSecrets
+                 (prop-matches? :secret-type "VAULT") VaultImagePullSecrets))
 
 (s/defschema VnicDetails
-  {(s/optional-key :displayName) s/Str
-   (s/optional-key :hostnameLabel) s/Str
-   (s/optional-key :isPublicIpAssigned) s/Bool
-   (s/optional-key :nsgIds) [s/Str]
-   (s/optional-key :privateIp) s/Str
-   (s/optional-key :skipSourceDestCheck) s/Bool
-   :subnetId s/Str})
+  {(s/optional-key :display-name) s/Str
+   (s/optional-key :hostname-label) s/Str
+   (s/optional-key :is-public-ip-assigned) s/Bool
+   (s/optional-key :nsg-ids) [s/Str]
+   (s/optional-key :private-ip) s/Str
+   (s/optional-key :skip-source-dest-check) s/Bool
+   :subnet-id s/Str})
 
 (def volume-details-base
   {:name s/Str
-   :volumeType (s/constrained s/Str #{"EMPTYDIR" "CONFIGFILE"})})
+   :volume-type (s/constrained s/Str #{"EMPTYDIR" "CONFIGFILE"})})
 
 (s/defschema EmptyDirVolumeDetails
   (assoc volume-details-base
-         :backingStore s/Str))
+         :backing-store s/Str))
 
 (s/defschema ConfigFile
   {:data s/Str
-   :fileName s/Str
+   :file-name s/Str
    (s/optional-key :path) s/Str})
 
 (s/defschema ConfigFileVolumeDetails
@@ -127,23 +127,22 @@
          :configs [ConfigFile]))
 
 (s/defschema VolumeDetails
-  (s/conditional (prop-matches? :volumeType "EMPTYDIR") EmptyDirVolumeDetails
-                 (prop-matches? :volumeType "CONFIGFILE") ConfigFileVolumeDetails))
+  (s/conditional (prop-matches? :volume-type "EMPTYDIR") EmptyDirVolumeDetails
+                 (prop-matches? :volume-type "CONFIGFILE") ConfigFileVolumeDetails))
 
 (s/defschema ContainerInstanceDetails
-  {:availabilityDomain s/Str
-   :compartmentId s/Str
-   (s/optional-key :containerRestartPolicy) (s/constrained s/Str #{"ALWAYS" "NEVER"})
+  {:availability-domain s/Str
+   :compartment-id s/Str
+   (s/optional-key :container-restart-policy) (s/constrained s/Str #{"ALWAYS" "NEVER"})
    :containers [ContainerDetails]
-   (s/optional-key :displayName) s/Str
-   (s/optional-key :dnsConfig) DnsConfig
-   (s/optional-key :faultDomain) s/Str
-   (s/optional-key :gracefulShutdownTimeoutInSeconds) s/Int
-   (s/optional-key :imagePullSecrets) ImagePullSecrets
+   (s/optional-key :display-name) s/Str
+   (s/optional-key :dns-config) DnsConfig
+   (s/optional-key :fault-domain) s/Str
+   (s/optional-key :graceful-shutdown-timeout-in-seconds) s/Int
+   (s/optional-key :image-pull-secrets) ImagePullSecrets
    :shape s/Str
-   :shapeConfig ShapeConfig
-   ;; FIXME Martian fails to convert they keys when there is a condition
-   :vnics [VnicDetails] #_(s/constrained [VnicDetails] (comp (partial = 1) count))
+   :shape-config ShapeConfig
+   :vnics (s/constrained [VnicDetails] (comp (partial = 1) count))
    (s/optional-key :volumes) (s/constrained [VolumeDetails] (max-count? 32))})
 
 (def routes
@@ -171,22 +170,22 @@
 
    {:route-name :start-container-instance
     :method :post
-    :path-parts ["/containerInstances/:instance-id/actions/start"]
+    :path-parts ["/containerInstances/" :instance-id "/actions/start"]
     :path-schema {:instance-id s/Str}}
 
    {:route-name :stop-container-instance
     :method :post
-    :path-parts ["/containerInstances/:instance-id/actions/stop"]
+    :path-parts ["/containerInstances/" :instance-id "/actions/stop"]
     :path-schema {:instance-id s/Str}}
 
    {:route-name :get-container-instance
     :method :get
-    :path-parts ["/containerInstances/:instance-id"]
+    :path-parts ["/containerInstances/" :instance-id]
     :path-schema {:instance-id s/Str}}
    
    {:route-name :delete-container-instance
     :method :delete
-    :path-parts ["/containerInstances/:instance-id"]
+    :path-parts ["/containerInstances/" :instance-id]
     :path-schema {:instance-id s/Str}}])
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))

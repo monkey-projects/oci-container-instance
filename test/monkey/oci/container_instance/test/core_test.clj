@@ -63,17 +63,17 @@
 (deftest image-pull-secrets
   (testing "fails on invalid"
     (is (some? (s/check sut/ImagePullSecrets
-                        {:secretType "invalid"}))))
+                        {:secret-type "invalid"}))))
   
   (testing "accepts basic"
     (is (nil? (s/check sut/ImagePullSecrets
-                       {:secretType "BASIC"
-                        :registryEndpoint "test"
+                       {:secret-type "BASIC"
+                        :registry-endpoint "test"
                         :username "testuser"
                         :password "testpass"}))))
 
   (testing "accepts vault"
     (is (nil? (s/check sut/ImagePullSecrets
-                       {:secretType "VAULT"
-                        :registryEndpoint "test"
-                        :secretId "test-secret"})))))
+                       {:secret-type "VAULT"
+                        :registry-endpoint "test"
+                        :secret-id "test-secret"})))))
