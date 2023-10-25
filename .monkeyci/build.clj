@@ -16,6 +16,6 @@
    {:name "test-and-deploy"
     :steps [unit-test
             jar
-            #_deploy]}))
+            deploy]}))
 
 [test-and-deploy]
