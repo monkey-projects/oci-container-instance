@@ -145,6 +145,9 @@
    :vnics (s/constrained [VnicDetails] (comp (partial = 1) count))
    (s/optional-key :volumes) (s/constrained [VolumeDetails] (max-count? 32))})
 
+(s/defschema UpdateContainerInstance
+  {(s/optional-key :display-name) s/Str})
+
 (def routes
   [(p/paged-route
     {:route-name :list-container-instances
@@ -186,7 +189,13 @@
    {:route-name :delete-container-instance
     :method :delete
     :path-parts ["/containerInstances/" :instance-id]
-    :path-schema {:instance-id s/Str}}])
+    :path-schema {:instance-id s/Str}}
+
+   {:route-name :update-container-instance
+    :method :put
+    :path-parts ["/containerInstances/" :instance-id]
+    :path-schema {:instance-id s/Str}
+    :body-schema {:container-instance UpdateContainerInstance}}])
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))
 

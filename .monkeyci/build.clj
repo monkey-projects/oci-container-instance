@@ -1,5 +1,7 @@
 (ns container-instance.build
-  (:require [monkey.ci.build.core :as c]))
+  (:require [monkey.ci.build
+             [api :as api]
+             [core :as c]]))
 
 (defn clj [name & args]
   "Executes script in clojure container"
@@ -11,11 +13,9 @@
 (def jar (clj "jar" "-X:jar"))
 (def deploy (clj "deploy" "-X:jar:deploy"))
 
-(def test-and-deploy
-  (c/pipeline
-   {:name "test-and-deploy"
-    :steps [unit-test
-            jar
-            deploy]}))
+(defpipeline test-and-deploy
+  [unit-test
+   jar
+   deploy])
 
 [test-and-deploy]

@@ -55,7 +55,9 @@
                    :start-container-instance {:instance-id "test-id"}
                    :stop-container-instance {:instance-id "test-id"}
                    :get-container-instance {:instance-id "test-id"}
-                   :delete-container-instance {:instance-id "test-id"}}))
+                   :delete-container-instance {:instance-id "test-id"}
+                   :update-container-instance {:instance-id "test-id"
+                                               :container-instance {:display-name "test container"}}}))
 
 (deftest shape-endpoints
   (test-endpoints {:list-container-instance-shapes {:compartment-id "test-compartment"}}))
