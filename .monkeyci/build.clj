@@ -13,7 +13,7 @@
 (def jar (clj "jar" "-X:jar"))
 (def deploy (clj "deploy" "-X:jar:deploy"))
 
-(defpipeline test-and-deploy
+(c/defpipeline test-and-deploy
   [unit-test
    jar
    deploy])
