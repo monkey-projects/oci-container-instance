@@ -13,9 +13,10 @@
 (def jar (clj "jar" "-X:jar"))
 
 (defn deploy [ctx]
-  (let [params (api/build-params ctx)]
-    (assoc (clj "deploy" "-X:jar:deploy")
-           :container/env (select-keys params ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"]))))
+  (-> (api/build-params ctx)
+      (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
+      (as-> p (assoc (clj "deploy" "-X:jar:deploy")
+                     :container/env p))))
 
 (c/defpipeline test-and-deploy
   [unit-test
