@@ -12,12 +12,12 @@ instead, to directly call the REST API.
 
 First include the library in your project:
 ```clojure
-# deps.edn
+;; deps.edn
 {com.monkeyprojects/oci-container-instance {:mvn/version "<version>"}}
 ```
 Or
 ```clojure
-# Leiningen
+;; Leiningen
 [com.monkeyprojects/oci-container-instance "<version>"]
 ```
 

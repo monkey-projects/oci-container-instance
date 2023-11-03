@@ -11,7 +11,11 @@
 
 (def unit-test (clj "unit-test" "-X:test:junit"))
 (def jar (clj "jar" "-X:jar"))
-(def deploy (clj "deploy" "-X:jar:deploy"))
+
+(defn deploy [ctx]
+  (let [params (api/build-params ctx)]
+    (assoc (clj "deploy" "-X:jar:deploy")
+           :container/env (select-keys params ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"]))))
 
 (c/defpipeline test-and-deploy
   [unit-test
