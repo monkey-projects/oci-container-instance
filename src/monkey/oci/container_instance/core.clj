@@ -131,15 +131,15 @@
                  (prop-matches? :volume-type "CONFIGFILE") ConfigFileVolumeDetails))
 
 (s/defschema ContainerInstanceDetails
-  {:availability-domain s/Str
-   :compartment-id s/Str
+  {:availability-domain (s/constrained s/Str not-empty)
+   :compartment-id (s/constrained s/Str not-empty)
    (s/optional-key :container-restart-policy) (s/constrained s/Str #{"ALWAYS" "NEVER"})
    :containers [ContainerDetails]
    (s/optional-key :display-name) s/Str
    (s/optional-key :dns-config) DnsConfig
    (s/optional-key :fault-domain) s/Str
    (s/optional-key :graceful-shutdown-timeout-in-seconds) s/Int
-   (s/optional-key :image-pull-secrets) ImagePullSecrets
+   (s/optional-key :image-pull-secrets) [ImagePullSecrets]
    :shape s/Str
    :shape-config ShapeConfig
    :vnics (s/constrained [VnicDetails] (comp (partial = 1) count))
