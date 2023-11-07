@@ -4,13 +4,13 @@
  
  :aliases
  {:dev
-  {:extra-paths ["env/dev" "dev-resources"]}
+  {:extra-paths ["env/dev" "dev-resources"]
+   :extra-deps {yogthos/config {:mvn/version "1.2.0"}}}
 
   :test
   {:extra-deps {com.monkeyprojects/build {:mvn/version "0.1.1"}
                 org.slf4j/slf4j-api {:mvn/version "2.0.7"}
                 ch.qos.logback/logback-classic {:mvn/version "1.4.8"}
-                yogthos/config {:mvn/version "1.2.0"}
                 com.github.oliyh/martian-test {:mvn/version "0.1.24"}}
    :extra-paths ["test" "dev-resources"]
    :exec-fn monkey.test/all}
