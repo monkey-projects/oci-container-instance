@@ -148,6 +148,11 @@
 (s/defschema UpdateContainerInstance
   {(s/optional-key :display-name) s/Str})
 
+(def instance-path ["/containerInstances/" :instance-id])
+
+(defn instance-action-path [act]
+  (into instance-path [(str "/actions/" act)]))
+
 (def routes
   [(p/paged-route
     {:route-name :list-container-instances
@@ -173,27 +178,27 @@
 
    {:route-name :start-container-instance
     :method :post
-    :path-parts ["/containerInstances/" :instance-id "/actions/start"]
+    :path-parts (instance-action-path "start")
     :path-schema {:instance-id s/Str}}
 
    {:route-name :stop-container-instance
     :method :post
-    :path-parts ["/containerInstances/" :instance-id "/actions/stop"]
+    :path-parts (instance-action-path "stop")
     :path-schema {:instance-id s/Str}}
 
    {:route-name :get-container-instance
     :method :get
-    :path-parts ["/containerInstances/" :instance-id]
+    :path-parts instance-path
     :path-schema {:instance-id s/Str}}
    
    {:route-name :delete-container-instance
     :method :delete
-    :path-parts ["/containerInstances/" :instance-id]
+    :path-parts instance-path
     :path-schema {:instance-id s/Str}}
 
    {:route-name :update-container-instance
     :method :put
-    :path-parts ["/containerInstances/" :instance-id]
+    :path-parts instance-path
     :path-schema {:instance-id s/Str}
     :body-schema {:container-instance UpdateContainerInstance}}
 
