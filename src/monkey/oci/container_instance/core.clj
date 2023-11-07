@@ -115,7 +115,7 @@
 
 (s/defschema EmptyDirVolumeDetails
   (assoc volume-details-base
-         :backing-store s/Str))
+         (s/optional-key :backing-store) s/Str))
 
 (s/defschema ConfigFile
   {:data s/Str
@@ -195,7 +195,12 @@
     :method :put
     :path-parts ["/containerInstances/" :instance-id]
     :path-schema {:instance-id s/Str}
-    :body-schema {:container-instance UpdateContainerInstance}}])
+    :body-schema {:container-instance UpdateContainerInstance}}
+
+   {:route-name :retrieve-logs
+    :method :get
+    :path-parts ["/containers" :container-id "/actions/retrieveLogs"]
+    :path-schema {:container-id s/Str}}])
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))
 
