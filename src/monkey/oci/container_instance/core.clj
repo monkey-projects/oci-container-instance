@@ -14,6 +14,17 @@
 (defn- max-count? [n]
   (comp (partial >= n) count))
 
+(def tag-map {s/Str s/Str})
+(s/defschema FreeformTags tag-map)
+(s/defschema DefinedTags {s/Str tag-map})
+
+(defn- with-tags
+  "Adds tags properties to schema"
+  [s]
+  (assoc s
+         (s/optional-key :freeform-tags) FreeformTags
+         (s/optional-key :defined-tags) DefinedTags))
+
 (def health-check-base
   {(s/optional-key :failure-action) (s/constrained s/Str #{"KILL" "NONE"})
    (s/optional-key :failure-threshold) (s/constrained s/Int pos?)
@@ -62,17 +73,18 @@
    (s/optional-key :sub-path) s/Str})
 
 (s/defschema ContainerDetails
-  {(s/optional-key :arguments) [s/Str]
-   (s/optional-key :command) [s/Str]
-   (s/optional-key :display-name) s/Str
-   (s/optional-key :environment-variables) {s/Str s/Str}
-   (s/optional-key :health-checks) [HealthCheck]
-   :image-url s/Str
-   (s/optional-key :is-resource-principal-disabled) s/Bool
-   (s/optional-key :resource-config) ResourceConfig
-   (s/optional-key :security-context) SecurityContext
-   (s/optional-key :volume-mounts) [VolumeMount]
-   (s/optional-key :working-directory) s/Str})
+  (with-tags
+    {(s/optional-key :arguments) [s/Str]
+     (s/optional-key :command) [s/Str]
+     (s/optional-key :display-name) s/Str
+     (s/optional-key :environment-variables) {s/Str s/Str}
+     (s/optional-key :health-checks) [HealthCheck]
+     :image-url s/Str
+     (s/optional-key :is-resource-principal-disabled) s/Bool
+     (s/optional-key :resource-config) ResourceConfig
+     (s/optional-key :security-context) SecurityContext
+     (s/optional-key :volume-mounts) [VolumeMount]
+     (s/optional-key :working-directory) s/Str}))
 
 (s/defschema DnsConfig
   {(s/optional-key :nameservers) (s/constrained [s/Str] (max-count? 3))
@@ -131,27 +143,35 @@
                  (prop-matches? :volume-type "CONFIGFILE") ConfigFileVolumeDetails))
 
 (s/defschema ContainerInstanceDetails
-  {:availability-domain (s/constrained s/Str not-empty)
-   :compartment-id (s/constrained s/Str not-empty)
-   (s/optional-key :container-restart-policy) (s/constrained s/Str #{"ALWAYS" "NEVER"})
-   :containers [ContainerDetails]
-   (s/optional-key :display-name) s/Str
-   (s/optional-key :dns-config) DnsConfig
-   (s/optional-key :fault-domain) s/Str
-   (s/optional-key :graceful-shutdown-timeout-in-seconds) s/Int
-   (s/optional-key :image-pull-secrets) [ImagePullSecrets]
-   :shape s/Str
-   :shape-config ShapeConfig
-   :vnics (s/constrained [VnicDetails] (comp (partial = 1) count))
-   (s/optional-key :volumes) (s/constrained [VolumeDetails] (max-count? 32))})
+  (with-tags 
+    {:availability-domain (s/constrained s/Str not-empty)
+     :compartment-id (s/constrained s/Str not-empty)
+     (s/optional-key :container-restart-policy) (s/constrained s/Str #{"ALWAYS" "NEVER"})
+     :containers [ContainerDetails]
+     (s/optional-key :display-name) s/Str
+     (s/optional-key :dns-config) DnsConfig
+     (s/optional-key :fault-domain) s/Str
+     (s/optional-key :graceful-shutdown-timeout-in-seconds) s/Int
+     (s/optional-key :image-pull-secrets) [ImagePullSecrets]
+     :shape s/Str
+     :shape-config ShapeConfig
+     :vnics (s/constrained [VnicDetails] (comp (partial = 1) count))
+     (s/optional-key :volumes) (s/constrained [VolumeDetails] (max-count? 32))}))
 
 (s/defschema UpdateContainerInstance
-  {(s/optional-key :display-name) s/Str})
+  (with-tags
+    {(s/optional-key :display-name) s/Str}))
+
+(s/defschema UpdateContainer
+  (with-tags
+    {(s/optional-key :display-name) s/Str}))
 
 (def instance-path ["/containerInstances/" :instance-id])
 
 (defn instance-action-path [act]
   (into instance-path [(str "/actions/" act)]))
+
+(def container-path ["/containers/" :container-id])
 
 (def routes
   [(p/paged-route
@@ -202,9 +222,20 @@
     :path-schema {:instance-id s/Str}
     :body-schema {:container-instance UpdateContainerInstance}}
 
+   {:route-name :get-container
+    :method :get
+    :path-parts container-path
+    :path-schema {:container-id s/Str}}
+
+   {:route-name :update-container
+    :method :put
+    :path-parts container-path
+    :path-schema {:container-id s/Str}
+    :body-schema {:container UpdateContainer}}
+   
    {:route-name :retrieve-logs
     :method :post
-    :path-parts ["/containers/" :container-id "/actions/retrieveLogs"]
+    :path-parts (into container-path ["/actions/retrieveLogs"])
     :path-schema {:container-id s/Str}}])
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))
