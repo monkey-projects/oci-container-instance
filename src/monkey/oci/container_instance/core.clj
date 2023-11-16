@@ -1,5 +1,9 @@
 (ns monkey.oci.container-instance.core
-  (:require [martian.core :as martian]
+  (:require [camel-snake-kebab.core :as csk]
+            [cheshire.core :as json]
+            [martian
+             [core :as martian]
+             [interceptors :as mi]]
             [monkey.oci.common
              [martian :as cm]
              [pagination :as p]
@@ -15,6 +19,7 @@
   (comp (partial >= n) count))
 
 (def tag-map {s/Str s/Str})
+
 (s/defschema FreeformTags tag-map)
 (s/defschema DefinedTags {s/Str tag-map})
 
@@ -240,11 +245,34 @@
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))
 
+(defn- json-encode
+  "Tags and environment variables should be passed as they are.  We can't just convert all
+   keys in the input to camelCase because of this.  This is a fairly naive approach to only
+   convert keywords, and leave strings as-is."
+  [body]
+  (letfn [(convert-key [k]
+            (if (keyword? k)
+              (csk/->camelCase (name k))
+              k))]
+    (when body
+      (json/generate-string body {:key-fn convert-key}))))
+
+(def encode-body (mi/encode-body {"application/json" {:encode json-encode}}))
+
+(defn- replace-json-encoder [i]
+  (-> i
+      (mi/inject encode-body :replace ::mi/encode-body)
+      ;; Don't keywordize params, it messes up our schemas.  The drawback is that
+      ;; we have to be careful to pass in keywords instead strings unless explicitly
+      ;; desired.
+      (mi/inject nil :replace ::mi/keywordize-params)))
+
 (defn make-context
   "Creates Martian context for the given configuration.  This context
    should be passed to subsequent requests."
   [conf]
-  (cm/make-context conf host routes))
+  (-> (cm/make-context conf host routes)
+      (update :interceptors replace-json-encoder)))
 
 (def send-request martian/response-for)
 

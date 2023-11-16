@@ -1,7 +1,11 @@
 (ns monkey.oci.container-instance.test.core-test
   (:require [clojure.test :refer [deftest testing is with-test]]
+            [cheshire.core :as json]
             [monkey.oci.container-instance.core :as sut]
-            [martian.test :as mt]
+            [martian
+             [schema :as ms]
+             [test :as mt]]
+            [org.httpkit.fake :as hf]
             [schema.core :as s])
   (:import java.security.KeyPairGenerator))
 
@@ -85,3 +89,41 @@
                        {:secret-type "VAULT"
                         :registry-endpoint "test"
                         :secret-id "test-secret"})))))
+
+(deftest tags
+  (let [tags {"customer_id" "test-customer"
+              "project_id" "test-project"}
+        opts {:container-instance
+              {:availability-domain "test-domain"
+               :compartment-id "test-compartment"
+               :shape "test-shape"
+               :shape-config {:ocpus 1}
+               :containers [{:image-url "test:latest"}]
+               :vnics [{:subnet-id "test-subnet"}]
+               :freeform-tags tags}}]
+    
+    (testing "passes tags as-is to martian when creating container instance"
+      (let [ctx (-> test-ctx
+                    (mt/respond-with
+                     {:create-container-instance
+                      (fn [req]
+                        (get-in req [:body :freeform-tags]))}))]
+        (is (= tags (-> ctx
+                        (sut/create-container-instance opts)
+                        (deref))))))
+
+    (testing "passes tags as-is to http request"
+      (hf/with-fake-http [{:url "https://compute-containers.test-region.oci.oraclecloud.com/20210415/containerInstances"
+                           :method :post}
+                          (fn [_ req _]
+                            (let [p (json/parse-string (:body req))]
+                              (cond-> {:status 200}
+                                (not= (get-in opts [:container-instance :freeform-tags])
+                                      (get p "freeformTags"))
+                                (assoc :status 400
+                                       :body "No matching tags found in request"))))]
+        (is (= 200 (-> test-ctx
+                       (sut/create-container-instance opts)
+                       (deref)
+                       :status)))))))
+
