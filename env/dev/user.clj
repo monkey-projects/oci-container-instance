@@ -31,15 +31,18 @@
        :display-name "apache"
        :environment-variables {"TEST_VAR" "test value"}}]}}))
 
+(defn list-instances []
+  (md/chain
+   (c/list-container-instances ctx {:compartment-id cid})
+   :body
+   :items))
+
 (defn delete-all-instances
   "Deletes all instances in the compartment.  Be careful with this..."
   []
   (md/chain
-   (c/list-container-instances ctx {:compartment-id cid})
-   :body
-   :items
+   (list-instances)
    (partial remove (comp (partial = "DELETED") :lifecycle-state))
    (partial map :id)
    (partial map #(c/delete-container-instance ctx {:instance-id %}))
    (partial apply md/zip)))
-

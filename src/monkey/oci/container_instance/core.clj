@@ -18,6 +18,11 @@
 (defn- max-count? [n]
   (comp (partial >= n) count))
 
+(defn- between?
+  "Checks if the value is between the two values (inclusive)"
+  [lo hi]
+  #(<= lo % hi))
+
 (def tag-map {s/Str s/Str})
 
 (s/defschema FreeformTags tag-map)
@@ -67,8 +72,18 @@
   {(s/optional-key :memory-limit-in-g-bs) s/Int
    (s/optional-key :vcpus-limit) s/Int})
 
-(s/defschema SecurityContext
+(def security-context-base
   {(s/optional-key :security-context-type) (s/constrained s/Str #{"LINUX"})})
+
+(s/defschema LinuxSecurityContext
+  (assoc security-context-base
+         :is-non-root-user-check-enabled s/Bool
+         :is-root-file-system-readonly s/Bool
+         :run-as-group (s/constrained s/Int (between? 0 65535))
+         :run-as-user (s/constrained s/Int (between? 0 65535))))
+
+(s/defschema SecurityContext
+  (s/conditional (prop-matches? :security-context-type "LINUX") LinuxSecurityContext))
 
 (s/defschema VolumeMount
   {:volume-name s/Str
