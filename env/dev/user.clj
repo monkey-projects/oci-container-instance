@@ -14,7 +14,7 @@
 
 (def ctx (c/make-context conf))
 
-(defn create-test-instance []
+(defn create-test-instance [& [container-opts]]
   (c/create-container-instance
    ctx
    {:container-instance
@@ -27,9 +27,10 @@
      :freeform-tags {"env" "test"}
      :vnics [{:subnet-id "ocid1.subnet.oc1.eu-frankfurt-1.aaaaaaaaeq6pmdp5teajste66ewnuiqatng7r6ffmn2432l3ttuefgftl6gq"}]
      :containers
-     [{:image-url "docker.io/httpd:2.4"
-       :display-name "apache"
-       :environment-variables {"TEST_VAR" "test value"}}]}}))
+     [(merge {:image-url "docker.io/httpd:2.4"
+              :display-name "apache"
+              :environment-variables {"TEST_VAR" "test value"}}
+             container-opts)]}}))
 
 (defn list-instances []
   (md/chain
@@ -46,3 +47,13 @@
    (partial map :id)
    (partial map #(c/delete-container-instance ctx {:instance-id %}))
    (partial apply md/zip)))
+
+(defn retrieve-logs [id]
+  (md/chain
+   (c/get-container-instance ctx {:instance-id id})
+   :body
+   :containers
+   first
+   #(select-keys % [:container-id])
+   (partial c/retrieve-logs ctx)
+   :body))

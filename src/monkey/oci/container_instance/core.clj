@@ -77,10 +77,10 @@
 
 (s/defschema LinuxSecurityContext
   (assoc security-context-base
-         :is-non-root-user-check-enabled s/Bool
-         :is-root-file-system-readonly s/Bool
-         :run-as-group (s/constrained s/Int (between? 0 65535))
-         :run-as-user (s/constrained s/Int (between? 0 65535))))
+         (s/optional-key :is-non-root-user-check-enabled) s/Bool
+         (s/optional-key :is-root-file-system-readonly) s/Bool
+         (s/optional-key :run-as-group) (s/constrained s/Int (between? 0 65535))
+         (s/optional-key :run-as-user) (s/constrained s/Int (between? 0 65535))))
 
 (s/defschema SecurityContext
   (s/conditional (prop-matches? :security-context-type "LINUX") LinuxSecurityContext))
@@ -229,7 +229,8 @@
    {:route-name :get-container-instance
     :method :get
     :path-parts instance-path
-    :path-schema {:instance-id s/Str}}
+    :path-schema {:instance-id s/Str}
+    :produces json}
    
    {:route-name :delete-container-instance
     :method :delete
@@ -240,23 +241,27 @@
     :method :put
     :path-parts instance-path
     :path-schema {:instance-id s/Str}
-    :body-schema {:container-instance UpdateContainerInstance}}
+    :body-schema {:container-instance UpdateContainerInstance}
+    :consumes json}
 
    {:route-name :get-container
     :method :get
     :path-parts container-path
-    :path-schema {:container-id s/Str}}
+    :path-schema {:container-id s/Str}
+    :produces json}
 
    {:route-name :update-container
     :method :put
     :path-parts container-path
     :path-schema {:container-id s/Str}
-    :body-schema {:container UpdateContainer}}
+    :body-schema {:container UpdateContainer}
+    :consumes json}
    
    {:route-name :retrieve-logs
     :method :post
     :path-parts (into container-path ["/actions/retrieveLogs"])
-    :path-schema {:container-id s/Str}}])
+    :path-schema {:container-id s/Str}
+    :produces #{"text/plain"}}])
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))
 
@@ -274,20 +279,31 @@
 
 (def encode-body (mi/encode-body {"application/json" {:encode json-encode}}))
 
-(defn- replace-json-encoder [i]
+(def retrieve-logs-fixer
+  "Due to a bug in the OCI retrieveLogs endpoint, it always sets content type
+   to `application/json` even though it returns plain text on a 200 response.
+   This interceptor updates the content-type header in that case."
+  {:name ::retrieve-logs-fixer
+   :leave (fn [ctx]
+            (cond-> ctx
+              (= :retrieve-logs (get-in ctx [:handler :route-name]))
+              (assoc-in [:response :headers :content-type] "text/plain")))})
+
+(defn- update-interceptors [i]
   (-> i
       (mi/inject encode-body :replace ::mi/encode-body)
       ;; Don't keywordize params, it messes up our schemas.  The drawback is that
       ;; we have to be careful to pass in keywords instead strings unless explicitly
       ;; desired.
-      (mi/inject nil :replace ::mi/keywordize-params)))
+      (mi/inject nil :replace ::mi/keywordize-params)
+      (mi/inject retrieve-logs-fixer :before :martian.httpkit/perform-request)))
 
 (defn make-context
   "Creates Martian context for the given configuration.  This context
    should be passed to subsequent requests."
   [conf]
   (-> (cm/make-context conf host routes)
-      (update :interceptors replace-json-encoder)))
+      (update :interceptors update-interceptors)))
 
 (def send-request martian/response-for)
 

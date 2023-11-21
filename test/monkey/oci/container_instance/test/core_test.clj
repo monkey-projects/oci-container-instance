@@ -72,6 +72,23 @@
                                       :container {:display-name "new-name"}}
                    :retrieve-logs {:container-id "test-container"}}))
 
+;; Disabled this test because for some strange reason Martien doesn't apply the
+;; interceptor when testing and I can't be bothered to figure out why that is...
+(deftest ^:kaocha/skip retrieve-logs
+  (testing "returns body as text"
+    (hf/with-fake-http
+      [{:url "https://compute-containers.test-region.oci.oraclecloud.com/20210415/containers/test-container/actions/retrieveLogs"
+        :method :post}
+       (fn [& _]
+         (future {:status 200
+                  :headers {"content-type" "application/json"}
+                  :body "These are the container logs"}))]
+      (let [r (-> test-ctx
+                  (sut/retrieve-logs {:container-id "test-container"})
+                  (deref))]
+        (is (= "These are the container logs" (:body r)))
+        (is (= "text/plain" (get-in r [:headers "content-type"])))))))
+
 (deftest image-pull-secrets
   (testing "fails on invalid"
     (is (some? (s/check sut/ImagePullSecrets

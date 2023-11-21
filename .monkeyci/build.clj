@@ -1,13 +1,19 @@
 (ns container-instance.build
   (:require [monkey.ci.build
              [api :as api]
-             [core :as c]]))
+             [core :as c]
+             [shell :as s]]))
 
 (defn clj [name & args]
   "Executes script in clojure container"
   {:name name
-   :container/image "docker.io/clojure:temurin-20-tools-deps-alpine"
-   :script [(apply str "clojure " args)]})
+   :container/image "docker.io/clojure:temurin-21-tools-deps-alpine"
+   :script ["ls -al"
+            "df -h"
+            (apply str "clojure " args)]})
+
+(def inspect
+  (s/bash "ls -al && df -h"))
 
 (def unit-test (clj "unit-test" "-X:test:junit"))
 (def jar (clj "jar" "-X:jar"))
@@ -19,7 +25,8 @@
                      :container/env p))))
 
 (c/defpipeline test-and-deploy
-  [unit-test
+  [inspect
+   unit-test
    jar
    deploy])
 
