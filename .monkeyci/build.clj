@@ -1,3 +1,6 @@
-(require '[monkey.ci.plugin.clj :as p])
+(ns build
+  (:require [monkey.ci.plugin.clj :as p]
+            [monkey.ci.plugin.github :as gh]))
 
-(p/deps-library)
+[(p/deps-library)
+ (gh/release-job {:dependencies ["test"]})]

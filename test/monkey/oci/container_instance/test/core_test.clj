@@ -48,7 +48,8 @@
    (test-endpoints test-ctx ep)))
 
 (deftest container-instance-endpoints
-  (test-endpoints {:list-container-instances {:compartment-id "test-compartment"}
+  (test-endpoints {:list-container-instances {:compartment-id "test-compartment"
+                                              :lifecycle-state "ACTIVE"}
                    :create-container-instance {:container-instance
                                                {:availability-domain "test-domain"
                                                 :compartment-id "test-compartment"

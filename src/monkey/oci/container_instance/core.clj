@@ -186,6 +186,21 @@
   (with-tags
     {(s/optional-key :display-name) s/Str}))
 
+(s/defschema LifecycleState
+  (s/constrained s/Str #{"CREATING"
+                         "UPDATING"
+                         "ACTIVE"
+                         "INACTIVE"
+                         "DELETING"
+                         "DELETED"
+                         "FAILED"}))
+
+(s/defschema SortOrder
+  (s/constrained s/Str #{"ASC" "DESC"}))
+
+(s/defschema SortBy
+  (s/constrained s/Str #{"timeCreated" "displayName"}))
+
 (def instance-path ["/containerInstances/" :instance-id])
 
 (defn instance-action-path [act]
@@ -198,7 +213,12 @@
     {:route-name :list-container-instances
      :method :get
      :path-parts ["/containerInstances"]
-     :query-schema {:compartmentId s/Str}
+     :query-schema {:compartmentId s/Str
+                    (s/optional-key :lifecycleState) LifecycleState
+                    (s/optional-key :displayName) s/Str
+                    (s/optional-key :availabilityDomain) s/Str
+                    (s/optional-key :sortOrder) SortOrder
+                    (s/optional-key :sortBy) SortBy}
      :produces json})
 
    (p/paged-route
