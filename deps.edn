@@ -1,6 +1,6 @@
-{:deps {com.monkeyprojects/oci-common {:mvn/version "0.1.2"}
+{:deps {com.monkeyprojects/oci-common {:mvn/version "0.2.1-SNAPSHOT"}
         manifold/manifold {:mvn/version "0.4.3"}
-        org.clojure/core.async {:mvn/version "1.6.681"}}
+        org.clojure/core.async {:mvn/version "1.7.701"}}
  
  :aliases
  {:dev
@@ -10,7 +10,7 @@
   :test
   {:extra-deps {com.monkeyprojects/build {:mvn/version "0.2.0"}
                 org.slf4j/slf4j-api {:mvn/version "2.0.16"}
-                ch.qos.logback/logback-classic {:mvn/version "1.5.12"}
+                ch.qos.logback/logback-classic {:mvn/version "1.5.16"}
                 com.github.oliyh/martian-test {:mvn/version "0.1.30"}
                 http-kit.fake/http-kit.fake {:mvn/version "0.2.2"}}
    :extra-paths ["test" "dev-resources"]
