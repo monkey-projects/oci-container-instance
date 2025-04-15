@@ -281,6 +281,7 @@
     :method :post
     :path-parts (into container-path ["/actions/retrieveLogs"])
     :path-schema {:container-id s/Str}
+    :query-schema {(s/optional-key :is-previous) s/Bool}
     :produces #{"text/plain"}}])
 
 (def host (comp (partial format "https://compute-containers.%s.oci.oraclecloud.com/20210415") :region))
