@@ -298,7 +298,7 @@
     (when body
       (json/generate-string body {:key-fn convert-key}))))
 
-(def encode-body (mi/encode-body {"application/json" {:encode json-encode}}))
+(def encode-request (mi/encode-request {"application/json" {:encode json-encode}}))
 
 (def retrieve-logs-fixer
   "Due to a bug in the OCI retrieveLogs endpoint, it always sets content type
@@ -308,11 +308,11 @@
    :leave (fn [ctx]
             (cond-> ctx
               (= :retrieve-logs (get-in ctx [:handler :route-name]))
-              (assoc-in [:response :headers :content-type] "text/plain")))})
+              (assoc-in [:response :headers "content-type"] "text/plain")))})
 
 (defn- update-interceptors [i]
   (-> i
-      (mi/inject encode-body :replace ::mi/encode-body)
+      (mi/inject encode-request :replace ::mi/encode-request)
       ;; Don't keywordize params, it messes up our schemas.  The drawback is that
       ;; we have to be careful to pass in keywords instead strings unless explicitly
       ;; desired.

@@ -73,17 +73,16 @@
                                       :container {:display-name "new-name"}}
                    :retrieve-logs {:container-id "test-container"}}))
 
-;; Disabled this test because for some strange reason Martien doesn't apply the
-;; interceptor when testing and I can't be bothered to figure out why that is...
-(deftest ^:kaocha/skip retrieve-logs
+(deftest retrieve-logs
   (testing "returns body as text"
     (hf/with-fake-http
       [{:url "https://compute-containers.test-region.oci.oraclecloud.com/20210415/containers/test-container/actions/retrieveLogs"
         :method :post}
-       (fn [& _]
-         (future {:status 200
-                  :headers {"content-type" "application/json"}
-                  :body "These are the container logs"}))]
+       (fn [_ _ callback]
+         ;; Invoke callback since httpkit is async
+         (callback {:status 200
+                    :headers {"content-type" "application/json"}
+                    :body "These are the container logs"}))]
       (let [r (-> test-ctx
                   (sut/retrieve-logs {:container-id "test-container"})
                   (deref))]
@@ -125,7 +124,8 @@
                     (mt/respond-with
                      {:create-container-instance
                       (fn [req]
-                        (get-in req [:body :freeform-tags]))}))]
+                        (let [body (json/parse-string (:body req))]
+                          (get body "freeformTags")))}))]
         (is (= tags (-> ctx
                         (sut/create-container-instance opts)
                         (deref))))))
@@ -133,13 +133,14 @@
     (testing "passes tags as-is to http request"
       (hf/with-fake-http [{:url "https://compute-containers.test-region.oci.oraclecloud.com/20210415/containerInstances"
                            :method :post}
-                          (fn [_ req _]
-                            (let [p (json/parse-string (:body req))]
-                              (cond-> {:status 200}
-                                (not= (get-in opts [:container-instance :freeform-tags])
-                                      (get p "freeformTags"))
-                                (assoc :status 400
-                                       :body "No matching tags found in request"))))]
+                          (fn [_ req callback]
+                            (callback
+                             (let [p (json/parse-string (:body req))]
+                               (cond-> {:status 200}
+                                 (not= (get-in opts [:container-instance :freeform-tags])
+                                       (get p "freeformTags"))
+                                 (assoc :status 400
+                                        :body "No matching tags found in request")))))]
         (is (= 200 (-> test-ctx
                        (sut/create-container-instance opts)
                        (deref)
